@@ -2,9 +2,9 @@
 Multi-GPU enabled fast batch removal of watermarks from large image datasets
 
 Key Architectural Features:
-- Multi GPU (AI) and CPU (I/O) workloads for true parallelism and high throughput.
-- Resumable processing via a `.processing_log.txt` checkpoint file.
-- Per-GPU status tracking in a pretty Rich console display
+- Multi GPU (AI) and CPU (I/O) workloads for high throughput.
+- Pause/resume processing at any time
+- Per-GPU performance/status tracking in a pretty console display
 
 On a dual RTX 4090 machine, you can de-watermark over 1000 images per minute. ⚡😎⚡
 
