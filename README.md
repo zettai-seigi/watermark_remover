@@ -1,8 +1,6 @@
 # watermark_remover
 Multi-GPU enabled fast batch removal of watermarks from large image datasets
 
-<img width="1122" height="462" alt="image" src="https://github.com/user-attachments/assets/6c0b6b34-e33d-498a-a9f9-4e6f0604ffb1" />
-
 Key Architectural Features:
 - Multi GPU (AI) and CPU (I/O) workloads for true parallelism and high throughput.
 - Resumable processing via a `.processing_log.txt` checkpoint file.
@@ -24,3 +22,7 @@ USAGE INSTRUCTIONS
 
 Run the script in terminal:
    python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
+
+Enjoy!
+
+<img width="1122" height="462" alt="image" src="https://github.com/user-attachments/assets/6c0b6b34-e33d-498a-a9f9-4e6f0604ffb1" />
