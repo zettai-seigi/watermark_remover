@@ -42,17 +42,6 @@ USAGE INSTRUCTIONS
     python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
 
 
-To run the script, you must provide an input and an output directory.
-
-* **To process a single folder:**
-    ```bash
-    python3 watermark_remover_final.py -i /path/to/your/images -o /path/to/save/clean_images
-    ```
-* **To process a folder and all its subdirectories:**
-    ```bash
-    python3 watermark_remover_final.py -i /path/to/your/images -o /path/to/save/clean_images -R
-    ```
-
 ---
 
 **Pausing and Resuming:**
