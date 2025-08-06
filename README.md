@@ -16,8 +16,6 @@ USAGE INSTRUCTIONS
    (See https://huggingface.co/spaces/fancyfeast/joycaption-watermark-detection)
    - On Linux/macOS, run this in your terminal:
      wget https://huggingface.co/spaces/fancyfeast/joycaption-watermark-detection/resolve/main/yolo11x-train28-best.pt
-   - On Windows (PowerShell), run this:
-     Invoke-WebRequest -Uri "https://huggingface.co/spaces/fancyfeast/joycaption-watermark-detection/resolve/main/yolo11x-train28-best.pt" -OutFile "yolo11x-train28-best.pt"
 
 3. Run the script:
    python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
