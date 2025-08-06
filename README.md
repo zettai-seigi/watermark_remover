@@ -14,17 +14,25 @@ On a dual RTX 4090 machine, you can de-watermark over 1000 images per minute. âš
 INSTALL INSTRUCTIONS
 --------------------------------------------------------------------
 1. Clone the repository:
-   git clone https://github.com/jferments/watermark_remover.git
+    ```bash
+    git clone https://github.com/jferments/watermark_remover.git
+    ```
+
 2. Enter the project directory
-   cd watermark_remover   
+    ```bash
+    cd watermark_remover
+    ```
+
 3. Install required Python packages
+    ```bash
     python -m venv venv
     source venv/bin/activate
     pip install rich ultralytics simple-lama-inpainting opencv-python torch --upgrade
+    ```
 4. Download [fancyfeast](https://huggingface.co/fancyfeast)'s custom [YOLOv11 watermark detection model](https://huggingface.co/spaces/fancyfeast/joycaption-watermark-detection) checkpoint from Hugging Face:
-   - On Linux/macOS, run this in your terminal:
-     wget https://huggingface.co/spaces/fancyfeast/joycaption-watermark-detection/resolve/main/yolo11x-train28-best.pt
-
+    ```bash
+    wget https://huggingface.co/spaces/fancyfeast/joycaption-watermark-detection/resolve/main/yolo11x-train28-best.pt
+    ```
 --------------------------------------------------------------------
 USAGE INSTRUCTIONS
 --------------------------------------------------------------------
