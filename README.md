@@ -6,6 +6,8 @@ Key Architectural Features:
 - Resumable processing via a `.processing_log.txt` checkpoint file.
 - Per-GPU status tracking in a pretty Rich console display
 
+On a dual RTX 4090 machine, you can de-watermark over 1000 images per minute. ⚡😎⚡
+
 --------------------------------------------------------------------
 INSTALL INSTRUCTIONS
 --------------------------------------------------------------------
