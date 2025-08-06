@@ -122,12 +122,14 @@ def find_image_files(input_dir: pathlib.Path, recursive: bool, console: Console)
 
 # ╭─────────────────────── Custom Rich Progress Columns ───────────────────────╮
 class SpeedColumn(TextColumn):
+    """A custom `rich` progress column for displaying speed in images/sec."""
     def __init__(self, *args, **kwargs): super().__init__(" ", *args, **kwargs)
     def render(self, task) -> Text:
         if task.speed is None: return Text("N/A", style="dim green")
         return Text(f"{task.speed:.2f} img/s", style="green")
 
 class EstimatedTimeRemainingColumn(TimeRemainingColumn):
+    """A `TimeRemainingColumn` that adds a custom label."""
     def render(self, task) -> Text:
         if task.finished or task.time_remaining is None: return Text("-:--:--", style="dim")
         return Text("Est. time remaining: ", style="dim") + super().render(task)
@@ -146,7 +148,7 @@ def gpu_worker_process(gpu_id: int, image_paths: list, write_queue: mp.Queue, st
         device = torch.device("cuda:0"); yolo_model = YOLO(args.weights).to(device); lama_model = SimpleLama(device=device)
     except Exception as e:
         status_queue.put({"type": "error", "message": f"GPU {gpu_id} failed to init: {e}"}); return
-    
+
     for path in image_paths:
         try:
             img_bgr = cv2.imread(str(path), cv2.IMREAD_COLOR)
@@ -201,7 +203,7 @@ def main():
     args = parse_cli_args()
     args.output.mkdir(parents=True, exist_ok=True)
     if args.debug: (args.output / "debug").mkdir(parents=True, exist_ok=True)
-    
+
     # --- Checkpoint and File Discovery ---
     log_file_path = args.output / ".processing_log.txt"
     processed_files_set = load_processed_files(log_file_path)
@@ -210,16 +212,16 @@ def main():
 
     all_image_paths = find_image_files(args.input, args.recursive, console)
     images_to_process = [p for p in all_image_paths if p.relative_to(args.input).as_posix() not in processed_files_set]
-    
+
     if not images_to_process:
         console.print("[bold green]✅ All images have already been processed. Nothing to do.[/bold green]"); sys.exit(0)
-    
+
     console.print(f"[*] Total images in dataset: {len(all_image_paths):,}. New images to process this session: [bold green]{len(images_to_process):,}[/bold green]")
-    
+
     gpu_ids = get_gpu_ids()
     if not gpu_ids: console.print("[bold red]ERROR: No NVIDIA GPUs detected.[/bold red]"); sys.exit(1)
     console.print(f"[*] Found {len(gpu_ids)} NVIDIA GPUs: {gpu_ids}")
-    
+
     ctx = mp.get_context("spawn")
     write_queue = ctx.Queue(maxsize=len(gpu_ids) * 20)
     status_queue = ctx.Queue()
@@ -237,7 +239,7 @@ def main():
     for p in gpu_workers: p.start()
 
     processing_start_time = time.time()
-    
+
     # --- Live Display and Main Monitoring Loop ---
     progress = Progress(
         TextColumn("[bold blue]Processing..."), BarColumn(), "[progress.percentage]{task.percentage:>3.1f}%", "•",
@@ -246,28 +248,30 @@ def main():
     )
     progress_task = progress.add_task("New Images", total=len(images_to_process))
     gpu_stats = {gpu_id: {'completed': 0, 'start_time': time.time()} for gpu_id in gpu_ids}
-    
+
     def generate_layout():
-        # CORRECTED: Added the missing "images" and "img/s" labels to the row data.
-        gpu_table = Table.grid(expand=True); gpu_table.add_column("GPU ID", style="cyan"); gpu_table.add_column("Processed", style="magenta"); gpu_table.add_column("Speed (img/s)", style="green")
+        gpu_table = Table.grid(expand=True)
+        gpu_table.add_column("GPU ID", justify="right", style="cyan", no_wrap=True)
+        gpu_table.add_column("Processed", justify="center", style="magenta")
+        gpu_table.add_column("Speed (img/s)", justify="center", style="green")
         for gpu_id, stats in gpu_stats.items():
             elapsed = time.time() - stats['start_time']
             rate = stats['completed'] / elapsed if elapsed > 1 else 0.0
-            gpu_table.add_row(f"[bold]GPU {gpu_id}[/]", f"{stats['completed']:,} images", f"{rate:.2f}")
-        
+            # THE ONLY CHANGE IS IN THE LINE BELOW: Added " img/s"
+            gpu_table.add_row(f"[bold]GPU {gpu_id}[/]", f"{stats['completed']:,} images", f"{rate:.2f} img/s")
+
         display_grid = Table.grid(padding=(0,0,1,0))
         display_grid.add_row(Panel(gpu_table, title="[bold]GPU Worker Status[/bold]", border_style="green"))
         display_grid.add_row(progress)
         return Panel(display_grid, title=f"[bold]Processing Session[/bold] ([yellow]{len(processed_files_set):,}[/] previously completed)", border_style="blue")
 
     log_file = open(log_file_path, "a", encoding="utf-8")
-    
+
     all_workers = gpu_workers + cpu_writers
     total_completed = 0
     try:
         with Live(generate_layout(), console=console, screen=True, redirect_stderr=False, vertical_overflow="crop") as live:
             while total_completed < len(images_to_process):
-                # Drain the status and log queues without blocking
                 try:
                     while True: # Process all available status messages
                         msg = status_queue.get_nowait()
@@ -278,19 +282,19 @@ def main():
                         elif msg["type"] == "log": console.log(f"⚠️ [yellow]WARNING:[/] {msg['message']}")
                 except queue.Empty:
                     pass
-                
+
                 try:
                     while True: # Process all available log messages
                         path_to_log = log_queue.get_nowait()
                         log_file.write(f"{path_to_log}\n")
                 except queue.Empty:
                     pass
-                
+
                 log_file.flush()
                 progress.update(progress_task, completed=total_completed)
                 live.update(generate_layout())
                 time.sleep(0.1)
-                
+
     except KeyboardInterrupt:
         console.print("\n[!] Pausing session... Please wait for checkpointing to complete.", style="bold yellow")
     finally:
@@ -298,7 +302,7 @@ def main():
 
     # --- Clean Shutdown Sequence ---
     console.print("\n[*] Shutting down all workers...")
-    
+
     for p in all_workers:
         if p.is_alive(): p.terminate()
     for p in all_workers:
@@ -306,9 +310,9 @@ def main():
 
     duration_seconds = time.time() - processing_start_time
     minutes, seconds = divmod(duration_seconds, 60)
-    
+
     final_processed_count = sum(stats['completed'] for stats in gpu_stats.values())
-    
+
     console.print("\n[--- [bold yellow]Session Paused / Complete[/bold yellow] ---]")
     console.print(f"✅ Processed [bold]{final_processed_count:,}[/] new images this session in [bold]{int(minutes)} minutes and {seconds:.2f} seconds[/bold].")
     console.print(f"✅ Clean images are saved in: [link=file://{args.output.resolve()}]{args.output.resolve()}[/link]")
