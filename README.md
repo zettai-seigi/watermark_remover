@@ -26,5 +26,4 @@ Run the script in terminal:
    python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
 
 Enjoy!
-
-<img width="1122" height="462" alt="image" src="https://github.com/user-attachments/assets/6c0b6b34-e33d-498a-a9f9-4e6f0604ffb1" />
+<img width="1083" height="485" alt="image" src="https://github.com/user-attachments/assets/093ce1ac-e364-4dbb-bf33-0d47dc4cad5f" />
