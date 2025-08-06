@@ -42,7 +42,7 @@ To run the script, you must provide an input and an output directory.
 
 ---
 
-**Pausing and Resuming: **
+**Pausing and Resuming:**
 
 For very large datasets, you can safely stop the script at any time by pressing **`Ctrl+C`**. The script will perform a graceful shutdown, save its progress, and print a summary for the session.
 
