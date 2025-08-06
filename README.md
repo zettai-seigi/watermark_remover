@@ -8,6 +8,8 @@ Key Architectural Features:
 
 On a dual RTX 4090 machine, you can de-watermark over 1000 images per minute. ⚡😎⚡
 
+<img width="1083" height="485" alt="image" src="https://github.com/user-attachments/assets/093ce1ac-e364-4dbb-bf33-0d47dc4cad5f" />
+
 --------------------------------------------------------------------
 INSTALL INSTRUCTIONS
 --------------------------------------------------------------------
@@ -22,9 +24,9 @@ INSTALL INSTRUCTIONS
 USAGE INSTRUCTIONS
 --------------------------------------------------------------------
 
-Basic usage:
-
-   python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
+**Basic usage:
+**
+    python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
 
 
 To run the script, you must provide an input and an output directory.
@@ -40,16 +42,16 @@ To run the script, you must provide an input and an output directory.
 
 ---
 
-Pausing and Resuming: 
-
+**Pausing and Resuming: 
+**
 For very large datasets, you can safely stop the script at any time by pressing **`Ctrl+C`**. The script will perform a graceful shutdown, save its progress, and print a summary for the session.
 
 When you run the script again with the **exact same output directory**, it will automatically detect the `.processing_log.txt` checkpoint file and resume where it left off, skipping any images that were already successfully processed.
 
 ---
 
-Command-Line Arguments
-
+**Command-Line Arguments
+**
 Here is a detailed explanation of all available arguments:
 
 * **`-i, --input`** `<path>` **(Required)** Specifies the path to the folder containing the images you want to process.
@@ -80,4 +82,3 @@ Here is a detailed explanation of all available arguments:
 
 
 Enjoy!
-<img width="1083" height="485" alt="image" src="https://github.com/user-attachments/assets/093ce1ac-e364-4dbb-bf33-0d47dc4cad5f" />
