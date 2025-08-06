@@ -24,8 +24,8 @@ INSTALL INSTRUCTIONS
 USAGE INSTRUCTIONS
 --------------------------------------------------------------------
 
-**Basic usage:
-**
+**Basic usage:**
+
     python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
 
 
@@ -42,16 +42,16 @@ To run the script, you must provide an input and an output directory.
 
 ---
 
-**Pausing and Resuming: 
-**
+**Pausing and Resuming: **
+
 For very large datasets, you can safely stop the script at any time by pressing **`Ctrl+C`**. The script will perform a graceful shutdown, save its progress, and print a summary for the session.
 
 When you run the script again with the **exact same output directory**, it will automatically detect the `.processing_log.txt` checkpoint file and resume where it left off, skipping any images that were already successfully processed.
 
 ---
 
-**Command-Line Arguments
-**
+**Command-Line Arguments**
+
 Here is a detailed explanation of all available arguments:
 
 * **`-i, --input`** `<path>` **(Required)** Specifies the path to the folder containing the images you want to process.
