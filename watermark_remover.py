@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-watermark_remover_final.py — DETECT (fancyfeast YOLOv11 finetune) + ERASE (Simple-LaMa)
+watermark_remover.py — DETECT (fancyfeast YOLOv11 finetune) + ERASE (Simple-LaMa)
 ======================================================================
 
 Multi-GPU enabled fast batch removal of watermarks from large image datasets
@@ -14,7 +14,7 @@ Key Architectural Features:
 USAGE INSTRUCTIONS
 --------------------------------------------------------------------
 
-   python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
+   python3 watermark_remover.py -i /path/to/inputs -o /path/to/outputs -R
 
 --------------------------------------------------------------------
 
