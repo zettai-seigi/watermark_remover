@@ -9,7 +9,6 @@ Key Architectural Features:
 On a dual RTX 4090 machine, you can de-watermark over 1000 images per minute. ⚡😎⚡
 
 <img width="1078" height="473" alt="image" src="https://github.com/user-attachments/assets/b4ce1a0f-af8e-4814-baef-64cc08fc4173" />
-<img width="688" height="219" alt="image" src="https://github.com/user-attachments/assets/b17a43a2-23e1-40a3-9ae9-91a8f1e9236d" />
 
 Enjoy!
 
@@ -49,6 +48,7 @@ For very large datasets, you can safely stop the script at any time by pressing 
 
 When you run the script again with the **exact same output directory**, it will automatically detect the `.processing_log.txt` checkpoint file and resume where it left off, skipping any images that were already successfully processed.
 
+<img width="688" height="219" alt="image" src="https://github.com/user-attachments/assets/b17a43a2-23e1-40a3-9ae9-91a8f1e9236d" />
 
 ## Command-Line Arguments
 
