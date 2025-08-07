@@ -25,7 +25,7 @@ Enjoy!
 
 3. Install required Python packages
     ```bash
-    python -m venv venv
+    python3 -m venv venv
     source venv/bin/activate
     pip install rich ultralytics simple-lama-inpainting opencv-python torch --upgrade
     ```
