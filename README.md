@@ -10,6 +10,7 @@ On a dual RTX 4090 machine, you can de-watermark over 1000 images per minute. âš
 
 <img width="1083" height="485" alt="image" src="https://github.com/user-attachments/assets/093ce1ac-e364-4dbb-bf33-0d47dc4cad5f" />
 
+Enjoy!
 
 # Install instructions
 1. Clone the repository:
@@ -79,4 +80,10 @@ Here is a detailed explanation of all available arguments:
     2.  `_mask_preview.png`: The mask overlaid in semi-transparent red on the original image.
 
 
-Enjoy!
+## Notes
+
+* There will be some amount of false negatives (watermarks that don't get detected/removed) and some false positives (image features incorrectly identified as watermarks and removed). My intitial tests were on an image dataset that was heavily weighted towards a specific type of watermark that almost always appears in the corners of the images. With these types of images, the false negative rate was very low (less than 1%). You can play around with the *--conf* command line option to adjust how sensitive watermark detection is (a lower # will decrease false negatives at the cost of increased false positives, and vice versa).
+* I have only tested this on my own machine which has dual 4090s and an AMD 7965WX (24 core) CPU, and I was averaging about 1000-1200 images/minute. Depending on your hardware (especially if you are running CPU only) or the size/resolution of images you're working with, you might experience much lower speeds.
+
+## Disclaimer
+ This script is provided for educational and technical demonstration purposes only. Removing watermarks from images may violate copyright or intellectual property rights. Users of this script are solely responsible for ensuring they have the legal right to modify the images they process. The author assumes no liability for misuse of this tool.
