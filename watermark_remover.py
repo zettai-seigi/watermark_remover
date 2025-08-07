@@ -17,6 +17,16 @@ USAGE INSTRUCTIONS
    python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
 
 --------------------------------------------------------------------
+
+ ╭────────────────────────────────────────────────────────────────────────╮
+ │                  DISCLAIMER & RESPONSIBLE USE NOTICE                   │
+ ╰────────────────────────────────────────────────────────────────────────╯
+ This script is provided for educational and technical demonstration
+ purposes only. Removing watermarks from images may violate copyright
+ or intellectual property rights. Users of this script are solely
+ responsible for ensuring they have the legal right to modify the images
+ they process. The author assumes no liability for misuse of this tool.
+
 """
 
 # ─────────────────────────────────── Standard Library Imports ───────────────────────────────────
@@ -46,16 +56,6 @@ except ImportError:
 # ───────────────────────────────────────────────────────────────────────────────────────────────
 
 IMG_EXTS = ("jpg", "jpeg", "png", "webp", "bmp", "tif", "tiff")
-
-# ╭────────────────────────────────────────────────────────────────────────╮
-# │                  DISCLAIMER & RESPONSIBLE USE NOTICE                   │
-# ╰────────────────────────────────────────────────────────────────────────╯
-# This script is provided for educational and technical demonstration
-# purposes only. Removing watermarks from images may violate copyright
-# or intellectual property rights. Users of this script are solely
-# responsible for ensuring they have the legal right to modify the images
-# they process. The author assumes no liability for misuse of this tool.
-
 
 # ╭───────────────────────── CLI Argument Parsing ─────────────────────────╮
 def parse_cli_args():
