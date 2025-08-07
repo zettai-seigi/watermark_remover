@@ -38,7 +38,7 @@ Enjoy!
 
 **Basic usage**
 
-    python3 watermark_remover_final.py -i /path/to/inputs -o /path/to/outputs -R
+    python3 watermark_remover.py -i /path/to/inputs -o /path/to/outputs -R
 
 
 
