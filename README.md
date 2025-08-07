@@ -84,6 +84,7 @@ Here is a detailed explanation of all available arguments:
 
 * There will be some amount of false negatives (watermarks that don't get detected/removed) and some false positives (image features incorrectly identified as watermarks and removed). My intitial tests were on an image dataset that was heavily weighted towards a specific type of watermark that almost always appears in the corners of the images. With these types of images, the false negative rate was very low (less than 1%). You can play around with the *--conf* command line option to adjust how sensitive watermark detection is (a lower # will decrease false negatives at the cost of increased false positives, and vice versa).
 * I have only tested this on my own machine which has dual 4090s and an AMD 7965WX (24 core) CPU, and I was averaging about 1000-1200 images/minute. Depending on your hardware (especially if you are running CPU only) or the size/resolution of images you're working with, you might experience much lower speeds.
+* I have written more about the rationale for creating this script [here](https://jferments.medium.com/large-scale-batch-removal-of-watermarks-from-image-datasets-d7fb5ab226b0).
 
 ## Disclaimer
  This script is provided for educational and technical demonstration purposes only. Removing watermarks from images may violate copyright or intellectual property rights. Users of this script are solely responsible for ensuring they have the legal right to modify the images they process. The author assumes no liability for misuse of this tool.
