@@ -1,12 +1,12 @@
 # watermark_remover
-Multi-GPU enabled fast batch removal of watermarks from large image datasets
+MLX-accelerated batch removal of watermarks from large image datasets
 
 Key Architectural Features:
-- Multi GPU (AI) and CPU (I/O) workloads for high throughput.
+- MLX/MPS (AI) and CPU (I/O) workloads for high throughput.
 - Pause/resume processing at any time
-- Per-GPU performance/status tracking in a pretty console display
+- Per-device performance/status tracking in a pretty console display
 
-On a dual RTX 4090 machine, you can de-watermark over 1000 images per minute. ⚡😎⚡
+On an Apple M-series machine, you can de-watermark images in batches with hardware acceleration.
 
 <img width="1078" height="473" alt="image" src="https://github.com/user-attachments/assets/b4ce1a0f-af8e-4814-baef-64cc08fc4173" />
 
@@ -27,7 +27,7 @@ Enjoy!
     ```bash
     python3 -m venv venv
     source venv/bin/activate
-    pip install rich ultralytics simple-lama-inpainting opencv-python torch --upgrade
+    pip install rich ultralytics simple-lama-inpainting opencv-python torch mlx --upgrade
     ```
 4. Download [fancyfeast](https://huggingface.co/fancyfeast)'s custom [YOLOv11 watermark detection model](https://huggingface.co/spaces/fancyfeast/joycaption-watermark-detection) checkpoint from Hugging Face:
     ```bash

@@ -3,12 +3,12 @@
 watermark_remover.py — DETECT (fancyfeast YOLOv11 finetune) + ERASE (Simple-LaMa)
 ======================================================================
 
-Multi-GPU enabled fast batch removal of watermarks from large image datasets
+MLX-accelerated batch removal of watermarks from large image datasets
 
 Key Architectural Features:
-- Multi GPU (AI) and CPU (I/O) workloads for true parallelism and high throughput.
+- MLX/MPS (AI) and CPU (I/O) workloads for high throughput.
 - Resumable processing via a `.processing_log.txt` checkpoint file.
-- Per-GPU status tracking in a pretty Rich console display
+- Per-device status tracking in a pretty Rich console display
 
 --------------------------------------------------------------------
 USAGE INSTRUCTIONS
@@ -76,13 +76,17 @@ def parse_cli_args():
 # ╰─────────────────────────────────────────────────────────────────────────╯
 
 # ╭─────────────────── System, Checkpoint & File Discovery Functions ───────────────────╮
-def get_gpu_ids():
-    """Detects available NVIDIA GPU IDs by shelling out to `nvidia-smi`."""
+def get_mlx_devices():
+    """Detects available Apple MLX/MPS devices."""
     try:
-        smi_output = subprocess.check_output(["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"], encoding="utf-8").strip()
-        return [int(line) for line in smi_output.splitlines()]
-    except (FileNotFoundError, subprocess.CalledProcessError, ValueError):
-        return []
+        import mlx.core as mx
+        return ["mps"] if mx.device_count() > 0 else []
+    except Exception:
+        try:
+            import torch
+            return ["mps"] if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available() else []
+        except Exception:
+            return []
 
 def load_processed_files(log_file_path: pathlib.Path) -> set:
     """Loads the set of already processed file paths from the checkpoint log."""
@@ -127,19 +131,17 @@ class EstimatedTimeRemainingColumn(TimeRemainingColumn):
         return Text("Est. time remaining: ", style="dim") + super().render(task)
 # ╰─────────────────────────────────────────────────────────────────────────╯
 
-# ╭─────────────────────── GPU & CPU Worker Implementations ───────────────────────╮
-def gpu_worker_process(gpu_id: int, image_paths: list, write_queue: mp.Queue, status_queue: mp.Queue, args: argparse.Namespace):
-    """The core function executed by each GPU worker process."""
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+# ╭─────────────────────── MLX & CPU Worker Implementations ───────────────────────╮
+def mlx_worker_process(device_name: str, image_paths: list, write_queue: mp.Queue, status_queue: mp.Queue, args: argparse.Namespace):
+    """The core function executed by each MLX/MPS worker process."""
     import torch, cv2, numpy as np
     from ultralytics import YOLO
     from simple_lama_inpainting import SimpleLama
     from PIL import Image
     try:
-        device = torch.device("cuda:0"); yolo_model = YOLO(args.weights).to(device); lama_model = SimpleLama(device=device)
+        device = torch.device(device_name); yolo_model = YOLO(args.weights).to(device); lama_model = SimpleLama(device=device)
     except Exception as e:
-        status_queue.put({"type": "error", "message": f"GPU {gpu_id} failed to init: {e}"}); return
+        status_queue.put({"type": "error", "message": f"Device {device_name} failed to init: {e}"}); return
 
     for path in image_paths:
         try:
@@ -164,9 +166,9 @@ def gpu_worker_process(gpu_id: int, image_paths: list, write_queue: mp.Queue, st
             else:
                 result_bgr = img_bgr
             write_queue.put((args.output / path.relative_to(args.input), result_bgr))
-            status_queue.put({"type": "gpu_progress", "gpu_id": gpu_id})
+            status_queue.put({"type": "device_progress", "device_id": device_name})
         except Exception as e:
-            status_queue.put({"type": "error", "message": f"Error on GPU {gpu_id} processing {path.name}: {e}"})
+            status_queue.put({"type": "error", "message": f"Error on device {device_name} processing {path.name}: {e}"})
 
 def cpu_writer_process(write_queue: mp.Queue, log_queue: mp.Queue, output_dir: pathlib.Path):
     """A dedicated I/O process that saves files and reports success for checkpointing."""
@@ -210,12 +212,12 @@ def main():
 
     console.print(f"[*] Total images in dataset: {len(all_image_paths):,}. New images to process this session: [bold green]{len(images_to_process):,}[/bold green]")
 
-    gpu_ids = get_gpu_ids()
-    if not gpu_ids: console.print("[bold red]ERROR: No NVIDIA GPUs detected.[/bold red]"); sys.exit(1)
-    console.print(f"[*] Found {len(gpu_ids)} NVIDIA GPUs: {gpu_ids}")
+    devices = get_mlx_devices()
+    if not devices: console.print("[bold red]ERROR: No MLX/MPS devices detected.[/bold red]"); sys.exit(1)
+    console.print(f"[*] Found {len(devices)} MLX/MPS device(s): {devices}")
 
     ctx = mp.get_context("spawn")
-    write_queue = ctx.Queue(maxsize=len(gpu_ids) * 20)
+    write_queue = ctx.Queue(maxsize=len(devices) * 20)
     status_queue = ctx.Queue()
     log_queue = ctx.Queue()
 
@@ -224,11 +226,11 @@ def main():
     cpu_writers = [ctx.Process(target=cpu_writer_process, args=(write_queue, log_queue, args.output)) for _ in range(args.cpu_workers)]
     for p in cpu_writers: p.start()
 
-    num_gpus = len(gpu_ids)
-    image_slices = [images_to_process[i::num_gpus] for i in range(num_gpus)]
-    console.print(f"[*] Starting {num_gpus} GPU worker processes...")
-    gpu_workers = [ctx.Process(target=gpu_worker_process, args=(gpu_ids[i], image_slices[i], write_queue, status_queue, args)) for i in range(num_gpus) if image_slices[i]]
-    for p in gpu_workers: p.start()
+    num_devices = len(devices)
+    image_slices = [images_to_process[i::num_devices] for i in range(num_devices)]
+    console.print(f"[*] Starting {num_devices} MLX worker process(es)...")
+    mlx_workers = [ctx.Process(target=mlx_worker_process, args=(devices[i], image_slices[i], write_queue, status_queue, args)) for i in range(num_devices) if image_slices[i]]
+    for p in mlx_workers: p.start()
 
     processing_start_time = time.time()
 
@@ -239,27 +241,27 @@ def main():
         SpeedColumn(), "•", EstimatedTimeRemainingColumn(), console=console
     )
     progress_task = progress.add_task("New Images", total=len(images_to_process))
-    gpu_stats = {gpu_id: {'completed': 0, 'start_time': time.time()} for gpu_id in gpu_ids}
+    device_stats = {device: {'completed': 0, 'start_time': time.time()} for device in devices}
 
     def generate_layout():
-        gpu_table = Table.grid(expand=True)
-        gpu_table.add_column("GPU ID", justify="right", style="cyan", no_wrap=True)
-        gpu_table.add_column("Processed", justify="center", style="magenta")
-        gpu_table.add_column("Speed (img/s)", justify="center", style="green")
-        for gpu_id, stats in gpu_stats.items():
+        device_table = Table.grid(expand=True)
+        device_table.add_column("Device", justify="right", style="cyan", no_wrap=True)
+        device_table.add_column("Processed", justify="center", style="magenta")
+        device_table.add_column("Speed (img/s)", justify="center", style="green")
+        for dev, stats in device_stats.items():
             elapsed = time.time() - stats['start_time']
             rate = stats['completed'] / elapsed if elapsed > 1 else 0.0
             # THE ONLY CHANGE IS IN THE LINE BELOW: Added " img/s"
-            gpu_table.add_row(f"[bold]GPU {gpu_id}[/]", f"{stats['completed']:,} images", f"{rate:.2f} img/s")
+            device_table.add_row(f"[bold]{dev}[/]", f"{stats['completed']:,} images", f"{rate:.2f} img/s")
 
         display_grid = Table.grid(padding=(0,0,1,0))
-        display_grid.add_row(Panel(gpu_table, title="[bold]GPU Worker Status[/bold]", border_style="green"))
+        display_grid.add_row(Panel(device_table, title="[bold]MLX Worker Status[/bold]", border_style="green"))
         display_grid.add_row(progress)
         return Panel(display_grid, title=f"[bold]Processing Session[/bold] ([yellow]{len(processed_files_set):,}[/] previously completed)", border_style="blue")
 
     log_file = open(log_file_path, "a", encoding="utf-8")
 
-    all_workers = gpu_workers + cpu_writers
+    all_workers = mlx_workers + cpu_writers
     total_completed = 0
     try:
         with Live(generate_layout(), console=console, screen=True, redirect_stderr=False, vertical_overflow="crop") as live:
@@ -267,8 +269,8 @@ def main():
                 try:
                     while True: # Process all available status messages
                         msg = status_queue.get_nowait()
-                        if msg["type"] == "gpu_progress":
-                            gpu_stats[msg["gpu_id"]]['completed'] += 1
+                        if msg["type"] == "device_progress":
+                            device_stats[msg["device_id"]]['completed'] += 1
                             total_completed += 1
                         elif msg["type"] == "error": console.log(f"❌ [bold red]ERROR:[/bold red] {msg['message']}")
                         elif msg["type"] == "log": console.log(f"⚠️ [yellow]WARNING:[/] {msg['message']}")
@@ -303,7 +305,7 @@ def main():
     duration_seconds = time.time() - processing_start_time
     minutes, seconds = divmod(duration_seconds, 60)
 
-    final_processed_count = sum(stats['completed'] for stats in gpu_stats.values())
+    final_processed_count = sum(stats['completed'] for stats in device_stats.values())
 
     console.print("\n[--- [bold yellow]Session Paused / Complete[/bold yellow] ---]")
     console.print(f"✅ Processed [bold]{final_processed_count:,}[/] new images this session in [bold]{int(minutes)} minutes and {seconds:.2f} seconds[/bold].")
