@@ -76,13 +76,28 @@ def parse_cli_args():
 # ╰─────────────────────────────────────────────────────────────────────────╯
 
 # ╭─────────────────── System, Checkpoint & File Discovery Functions ───────────────────╮
-def get_gpu_ids():
-    """Detects available NVIDIA GPU IDs by shelling out to `nvidia-smi`."""
+def get_available_devices():
+    """Detects available GPU devices, preferring CUDA but falling back to Apple MPS."""
     try:
-        smi_output = subprocess.check_output(["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"], encoding="utf-8").strip()
-        return [int(line) for line in smi_output.splitlines()]
+        smi_output = subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"],
+            encoding="utf-8",
+        ).strip()
+        cuda_ids = [int(line) for line in smi_output.splitlines()]
+        if cuda_ids:
+            return "cuda", cuda_ids
     except (FileNotFoundError, subprocess.CalledProcessError, ValueError):
-        return []
+        pass
+
+    try:
+        import torch
+
+        if torch.backends.mps.is_available():
+            return "mps", ["MPS"]
+    except Exception:
+        pass
+
+    return None, []
 
 def load_processed_files(log_file_path: pathlib.Path) -> set:
     """Loads the set of already processed file paths from the checkpoint log."""
@@ -128,18 +143,29 @@ class EstimatedTimeRemainingColumn(TimeRemainingColumn):
 # ╰─────────────────────────────────────────────────────────────────────────╯
 
 # ╭─────────────────────── GPU & CPU Worker Implementations ───────────────────────╮
-def gpu_worker_process(gpu_id: int, image_paths: list, write_queue: mp.Queue, status_queue: mp.Queue, args: argparse.Namespace):
+def gpu_worker_process(
+    gpu_id,
+    device_type: str,
+    image_paths: list,
+    write_queue: mp.Queue,
+    status_queue: mp.Queue,
+    args: argparse.Namespace,
+):
     """The core function executed by each GPU worker process."""
-    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    if device_type == "cuda":
+        os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
     import torch, cv2, numpy as np
     from ultralytics import YOLO
     from simple_lama_inpainting import SimpleLama
     from PIL import Image
     try:
-        device = torch.device("cuda:0"); yolo_model = YOLO(args.weights).to(device); lama_model = SimpleLama(device=device)
+        device = torch.device("cuda:0" if device_type == "cuda" else "mps")
+        yolo_model = YOLO(args.weights).to(device)
+        lama_model = SimpleLama(device=device)
     except Exception as e:
-        status_queue.put({"type": "error", "message": f"GPU {gpu_id} failed to init: {e}"}); return
+        status_queue.put({"type": "error", "message": f"GPU {gpu_id} failed to init: {e}"})
+        return
 
     for path in image_paths:
         try:
@@ -210,9 +236,14 @@ def main():
 
     console.print(f"[*] Total images in dataset: {len(all_image_paths):,}. New images to process this session: [bold green]{len(images_to_process):,}[/bold green]")
 
-    gpu_ids = get_gpu_ids()
-    if not gpu_ids: console.print("[bold red]ERROR: No NVIDIA GPUs detected.[/bold red]"); sys.exit(1)
-    console.print(f"[*] Found {len(gpu_ids)} NVIDIA GPUs: {gpu_ids}")
+    device_type, gpu_ids = get_available_devices()
+    if not gpu_ids:
+        console.print("[bold red]ERROR: No compatible GPU detected (CUDA or Apple MPS).[/bold red]")
+        sys.exit(1)
+    if device_type == "cuda":
+        console.print(f"[*] Found {len(gpu_ids)} NVIDIA GPUs: {gpu_ids}")
+    else:
+        console.print("[*] Using Apple MPS GPU")
 
     ctx = mp.get_context("spawn")
     write_queue = ctx.Queue(maxsize=len(gpu_ids) * 20)
@@ -227,7 +258,14 @@ def main():
     num_gpus = len(gpu_ids)
     image_slices = [images_to_process[i::num_gpus] for i in range(num_gpus)]
     console.print(f"[*] Starting {num_gpus} GPU worker processes...")
-    gpu_workers = [ctx.Process(target=gpu_worker_process, args=(gpu_ids[i], image_slices[i], write_queue, status_queue, args)) for i in range(num_gpus) if image_slices[i]]
+    gpu_workers = [
+        ctx.Process(
+            target=gpu_worker_process,
+            args=(gpu_ids[i], device_type, image_slices[i], write_queue, status_queue, args),
+        )
+        for i in range(num_gpus)
+        if image_slices[i]
+    ]
     for p in gpu_workers: p.start()
 
     processing_start_time = time.time()
