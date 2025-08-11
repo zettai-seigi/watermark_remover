@@ -3,10 +3,12 @@ Multi-GPU enabled fast batch removal of watermarks from large image datasets
 
 Key Architectural Features:
 - Multi GPU (AI) and CPU (I/O) workloads for high throughput.
+- Supports NVIDIA CUDA and Apple MPS (MLX) backends.
 - Pause/resume processing at any time
 - Per-GPU performance/status tracking in a pretty console display
 
 On a dual RTX 4090 machine, you can de-watermark over 1000 images per minute. ⚡😎⚡
+The script also supports Apple's MPS backend (via MLX/PyTorch) for running on Apple Silicon.
 
 <img width="1078" height="473" alt="image" src="https://github.com/user-attachments/assets/b4ce1a0f-af8e-4814-baef-64cc08fc4173" />
 
